@@ -24,11 +24,20 @@ _start:
     mov si, msg
     call print
 
+    ; 保存调用前环境
+    push ecx
+    push bx
+    push edi
 
     mov ecx, 1 ; 从硬盘哪个扇区开始读。这里尤其要注意，CHS 方式读取扇区从 1 开始，但是 LBA 模式从 0 开始！！
     mov bl, 2  ; 读取的扇区数量
     mov edi, BOOT_MAIN_ADDR    ; 表示数据读到哪个地址
     call read_data_from_disk
+
+    ; 恢复调用前环境
+    pop edi
+    push bx
+    push ecx
 
     ; 这里读取硬盘成功，打印跳转到 setup 的信息
     mov si, jmp_to_setup
@@ -135,7 +144,7 @@ read_data_from_disk:
 
     pop cx
     loop .selector_loop  ; 继续读取扇区
-    
+
 .done:
     ret
 
