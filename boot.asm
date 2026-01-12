@@ -14,14 +14,19 @@ _start:
     mov ss, ax
 	mov ds, ax
 	mov es, ax
+    mov fs, ax
+    mov gs, ax
 	mov si, ax
+    ; 这里设置栈顶和栈底
+    mov sp, 0x7c00
+    mov bp, sp
 
     mov si, msg
     call print
 
 
     mov ecx, 1 ; 从硬盘哪个扇区开始读。这里尤其要注意，CHS 方式读取扇区从 1 开始，但是 LBA 模式从 0 开始！！
-    mov bl, 1  ; 读取的扇区数量
+    mov bl, 2  ; 读取的扇区数量
     
     ; 0x1f2 8bit 指定读取或写入的扇区数
     mov dx, 0x1f2
@@ -60,6 +65,13 @@ _start:
     mov al, 0x20
     out dx, al
 
+    xor ecx, ecx               ; 表示清空 ecx
+    and bx, 0xFF               ; bx 寄存器中只保留 bl 部分
+    mov cx, bx                 ; 要读取几个扇区放到 cx 中
+    mov edi, BOOT_MAIN_ADDR    ; 表示数据读到哪个地址
+
+; 这里用来循环读取多个扇区
+.selector_loop:
 ; 验证状态
 ; 3 0表示硬盘未准备好与主机交换数据 1表示准备好了
 ; 7 0表示硬盘不忙 1表示硬盘忙
@@ -67,14 +79,23 @@ _start:
 .read_check:
     mov dx, 0x1f7  ; 0x1f7 端口在写完 0x20 之后，就会返回硬盘状态，我们可以从这里读取硬盘状态
     in al, dx      ; 将 0x1f7 端口的数据读入 al
-    and al, 0b10001000  ; 取硬盘状态的第3、7位
+
+    ; 这里检查硬盘有无错误
+    push al        ; 保存 al
+    and al, 0b00000001  ; 取硬盘状态的第0位：0 表示硬盘有错误
+    cmp al, 0b00000001  ; 1 表示硬盘有错误
+    jz .read_disk_error
+
+    ; 这里检查硬盘是否繁忙
+    pop al
+    and al, 0b10001000  ; 取硬盘状态的第3、7位：3 位表示有数据准备好，7 位表示硬盘忙
     cmp al, 0b00001000  ; 当硬盘第 3 位是 1, 第 7 位是 0 时，表示硬盘数据准备好了不忙
     jnz .read_check     ; 如果硬盘没有准备好，则跳转到 .read_check
 
     ; 开始读数据
+    push cx           ; 保存 cx，因为 .selector_loop 会用到
     mov dx, 0x1f0     ; 硬盘的数据都是从这个端口读，一次读取 2 字节（16位）
     mov cx, 256       ; 表示读取几次
-    mov edi, BOOT_MAIN_ADDR   ; 表示数据读到哪个地址
 
 .read_data:
     in ax, dx         ; 把 dx 寄存器表示的端口的数据读入 ax
@@ -84,12 +105,15 @@ _start:
     ; loop 跳转之前会先判断 cx 是否为 0, 如果为 0 则跳转到 .read_data, 并且将 cx - 1
     loop .read_data
 
-    mov dx, 0x1f7
-    in al, dx
+    ; 这里表示一个扇区读完，开始检查这个扇区读取状态
+    mov dx, 0x1f7     ; 获取硬盘状态
+    in al, dx         ; 硬盘状态读取到 al 寄存器  
     and al, 0b00000001
     cmp al, 0b00000001 ; 第 0 位为 1 表示有错误
     jz .read_disk_error  ; 读取有误，跳转到 .read_disk_error
 
+    pop cx
+    loop .selector_loop  ; 继续读取扇区
 
     ; 这里读取硬盘成功，打印跳转到 setup 的信息
     mov si, jmp_to_setup
