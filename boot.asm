@@ -81,13 +81,13 @@ _start:
     in al, dx      ; 将 0x1f7 端口的数据读入 al
 
     ; 这里检查硬盘有无错误
-    push al        ; 保存 al
+    push ax        ; 保存 al
     and al, 0b00000001  ; 取硬盘状态的第0位：0 表示硬盘有错误
     cmp al, 0b00000001  ; 1 表示硬盘有错误
     jz .read_disk_error
 
     ; 这里检查硬盘是否繁忙
-    pop al
+    pop ax
     and al, 0b10001000  ; 取硬盘状态的第3、7位：3 位表示有数据准备好，7 位表示硬盘忙
     cmp al, 0b00001000  ; 当硬盘第 3 位是 1, 第 7 位是 0 时，表示硬盘数据准备好了不忙
     jnz .read_check     ; 如果硬盘没有准备好，则跳转到 .read_check
