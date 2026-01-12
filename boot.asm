@@ -27,11 +27,11 @@ _start:
 
     mov ah, 0x02 ; 功能：读扇区
     mov al, 2    ; 扇区数：2   表示我要读几个扇区， 1 个扇区 = 512 字节
-    mov dl, 0x80   ; 驱动器：0x80=第一个硬盘；0x81=第二个硬盘， 如果是软盘，则驱动器为0x00，0x01编号
+    mov dl, 0x80 ; 驱动器：0x80=第一个硬盘；0x81=第二个硬盘， 如果是软盘，则驱动器为0x00，0x01编号
     int 0x13
 
     ; 这里 int 0x13 读取磁盘出错, 就会修改 FLAGS 寄存器的 CF 位 =1，则 jc 跳转命令生效 
-    ;jc .read_disk_error
+    jc .read_disk_error
 
     ; 这里读取硬盘成功，打印跳转到 setup 的信息
     mov si, jmp_to_setup

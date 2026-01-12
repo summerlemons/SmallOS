@@ -14,8 +14,8 @@ ${TARGET}/%.o: %.asm
 clean:
 	rm -rf ${TARGET}
 
-bochs:
+bochs: all
 	bochs -q -f bochsrc
 
-qemu:
+qemu: all
 	qemu-system-x86_64 -hda ${TARGET}/${DISK_NAME}
