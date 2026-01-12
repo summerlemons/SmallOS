@@ -27,7 +27,29 @@ _start:
 
     mov ecx, 1 ; 从硬盘哪个扇区开始读。这里尤其要注意，CHS 方式读取扇区从 1 开始，但是 LBA 模式从 0 开始！！
     mov bl, 2  ; 读取的扇区数量
-    
+    mov edi, BOOT_MAIN_ADDR    ; 表示数据读到哪个地址
+    call read_data_from_disk
+
+    ; 这里读取硬盘成功，打印跳转到 setup 的信息
+    mov si, jmp_to_setup
+    call print
+    ; 跳转到 setup
+    jmp BOOT_MAIN_ADDR
+
+
+; 这里我们封装一个函数，用来从硬盘读取数据
+;============================================================================
+; 函数参数：
+; ecx: 从哪个扇区开始读取
+; bl: 读取的扇区数量
+; edi: 存放读取的数据
+; 调用样例：
+; mov ecx, 1
+; mov bl, 2
+; mov edi, 0x500
+; call read_data_from_disk
+;============================================================================
+read_data_from_disk:
     ; 0x1f2 8bit 指定读取或写入的扇区数
     mov dx, 0x1f2
     mov al, bl
@@ -68,7 +90,6 @@ _start:
     xor ecx, ecx               ; 表示清空 ecx
     and bx, 0xFF               ; bx 寄存器中只保留 bl 部分
     mov cx, bx                 ; 要读取几个扇区放到 cx 中
-    mov edi, BOOT_MAIN_ADDR    ; 表示数据读到哪个地址
 
 ; 这里用来循环读取多个扇区
 .selector_loop:
@@ -114,13 +135,9 @@ _start:
 
     pop cx
     loop .selector_loop  ; 继续读取扇区
-
-    ; 这里读取硬盘成功，打印跳转到 setup 的信息
-    mov si, jmp_to_setup
-    call print
-    ; 跳转到 setup
-    jmp BOOT_MAIN_ADDR
-
+    
+.done:
+    ret
 
 ; 如果读取磁盘出错，则打印错误信息
 .read_disk_error:
@@ -129,7 +146,14 @@ _start:
 
     jmp $
 
-
+; 封装一个函数，用来打印字符串
+;============================================================================
+; 函数参数：
+; si: 字符串地址
+; 调用样例：
+; mov si, msg
+; call print
+;=============================================================================
 print:               ; 实现print打印函数
 	mov ah, 0x0e     ; 设置中断为AH=0EH/INT 0x10
     mov bh, 0        ; 设置页码
