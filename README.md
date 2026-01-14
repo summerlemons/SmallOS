@@ -6,37 +6,15 @@
 make bochs
 ```
 
-## 2. 手动构建
-### 1. 代码编译
-```bash
-mkdir target
-nasm boot.asm -o target/boot.o
-nasm setup.asm -o target/setup.o
-```
-这里我们把所有的编译结果都放在 target 目录下，然后编译 asm 文件，生成 target/*.o 文件。
-
-### 2. 创建硬盘
-接下来创建硬盘信息：
-```bash
-bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat target/hd.img
-```
-这里我们创建了一个 16MB 的硬盘。
-
-### 3. 编译代码放到硬盘
-我们说操作系统最开始的 512 字节是引导代码，是需要放到硬盘的最开始的 512 字节中的。因此这里我们把 boot.o 文件的二进制内容放到硬盘的最开始的 512 字节中。然后 setup 的代码放到 512 字节之后的空间即可，这里用两个扇区也就是 1024 字节存储。
-```bash
-dd if=boot.o of=hd.img bs=512 count=1 seek=0 conv=notrunc
-dd if=setup.o of=hd.img bs=512 count=2 seek=1 conv=notrunc
-```
-
-### 4. 生成 bochs 配置文件
+## 2. bochsrc 配置文件的生成与配置
+### 1. 创建 bochsrc 文件
 我们使用 bochs 模拟一个 CPU 来运行我们写的 boot.o 里边的命令。首先使用如下命令创建 bochs 配置文件：
 ```bash
 bochs -q
 ```
 上面命令会进入 bochs 的交互式配置界面。
 ```bash
-SmallOS/target on  main [!?] 
+SmallOS on  main [!?] 
 ➜ bochs -q
 ========================================================================
                         Bochs x86 Emulator 2.7
@@ -98,7 +76,7 @@ Please choose one: [2] 7
 00000000000i[SIM   ] quit_sim called with exit code 1
 ```
 配置文件保存在根目录下 `bochsrc`。
-### 5. 修改配置文件
+### 2. 修改配置文件
 我们打开 bochsrc 文件，修改如下内容：
 1. 修改配置文件里边 `display_library` 选项，修改完后为 `display_library: x, options="gui_debug"`
 2. 修改 `boot: floppy` 选项，修改为 `boot: disk`, 表示使用硬盘启动 (先前的 floppy 选项表示使用软盘启动)。
@@ -119,9 +97,3 @@ The following line should appear in your bochsrc:
 ```
 即替换 `ata0-master` 字段，替换为：`ata0-master: type=disk, path="target/hd.img", mode=flat`。
 4. 修改 `magic_break` 值，修改完后为： `magic_break: enabled=1`。表示开启断点调试功能。
-
-### 6. 运行模拟器
-接下来即可运行这个 boot.o 里边的命令。
-```bash
-bochs -q -f bochsrc
-```
