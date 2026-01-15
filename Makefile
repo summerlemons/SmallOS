@@ -24,7 +24,7 @@ all: ${TARGET}/boot.o ${TARGET}/setup.o ${TARGET}/system.bin
 	dd if=${TARGET}/setup.o of=${TARGET}/${DISK_NAME} bs=512 count=2 seek=1 conv=notrunc
 	dd if=${TARGET}/system.bin of=${TARGET}/${DISK_NAME} bs=512 count=60 seek=3 conv=notrunc
 
-${TARGET}/%.o: %.asm
+${TARGET}/%.o: src/bootloader/%.asm
 	mkdir -p ${TARGET}
 	nasm $< -o $@
 
@@ -34,11 +34,11 @@ ${TARGET}/system.bin: ${TARGET}/kernel.elf
 ${TARGET}/kernel.elf: ${TARGET}/head.o ${TARGET}/main.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
-${TARGET}/head.o: head.asm
+${TARGET}/head.o: src/bootloader/head.asm
 	mkdir -p ${TARGET}
 	nasm -f elf32 $< -o $@
 
-${TARGET}/main.o: main.c
+${TARGET}/main.o: src/kernel/main.c
 	mkdir -p ${TARGET}
 	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
 
