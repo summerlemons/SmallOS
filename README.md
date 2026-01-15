@@ -6,7 +6,54 @@
 make bochs
 ```
 
-## 2. bochsrc 配置文件的生成与配置
+## 2. gdb + qemu 调试内核
+先使用 qemu 启动调试模式内核：
+```bash
+make qemug
+```
+然后使用 gdb 调试加载 kernel.elf 内核：
+```bash
+gdb target/kernel.elf
+```
+而后进入 gdb 界面后，设置架构信息和远程调试地址, 然后即可进入调试：
+```bash
+SmallOS on  main [!] via C v11.4.0-gcc 
+✦6 ➜ gdb target/kernel.elf 
+GNU gdb (GDB) 8.3
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-pc-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from target/kernel.elf...
+(gdb) set architecture i386
+The target architecture is assumed to be i386
+(gdb) target remote :1234
+Remote debugging using :1234
+0x0000fff0 in ?? ()
+(gdb) b main.c:4
+Breakpoint 1 at 0x1214: file main.c, line 4.
+(gdb) i b
+Num     Type           Disp Enb Address    What
+1       breakpoint     keep y   0x00001214 in kernel_main at main.c:4
+(gdb) c
+Continuing.
+
+Breakpoint 1, kernel_main () at main.c:4
+4	    *video = 'G';                 // 修改显存的第一个字符为 G
+(gdb)
+```
+
+## 3. bochsrc 配置文件的生成与配置
 ### 1. 创建 bochsrc 文件
 我们使用 bochs 模拟一个 CPU 来运行我们写的 boot.o 里边的命令。首先使用如下命令创建 bochs 配置文件：
 ```bash

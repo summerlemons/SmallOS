@@ -50,3 +50,6 @@ bochs: all
 
 qemu: all
 	qemu-system-x86_64 -hda ${TARGET}/${DISK_NAME}
+
+qemug: all
+	qemu-system-i386 -hda ${TARGET}/${DISK_NAME} -S -s
