@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "name": "Kernel Debug (Auto)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/kernel.elf",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerServerAddress": "localhost:1234",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "preLaunchTask": "start-qemu", // 关联上面的任务
+            "stopAtEntry": false,
+            "setupCommands": [
+                { "text": "set architecture i386" }
+            ],
+            "logging": { "engineLogging": false }
+        }
+    ]
+}

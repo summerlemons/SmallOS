@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start-qemu",
+            "type": "shell",
+            "command": "qemu-system-i386",
+            "args": [
+                "-hda",
+                "${workspaceFolder}/target/hd.img", // 请根据你的实际路径修改镜像名
+                "-S",
+                "-s"
+            ],
+            "isBackground": true, // 必须为 true，否则 VS Code 会一直等它结束
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            // 使用问题匹配器让 VS Code 知道任务何时启动完成
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": "."
+                    }
+                }
+            ]
+        }
+    ]
+}
