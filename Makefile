@@ -17,29 +17,39 @@ CFLAGS:=$(strip ${CFLAGS})
 
 DEBUG:= -g
 
-all: ${TARGET}/boot.o ${TARGET}/setup.o ${TARGET}/system.bin
+all: ${TARGET}/bootloader/boot.o ${TARGET}/bootloader/setup.o ${TARGET}/system.bin
 	rm -rf ${TARGET}/${DISK_NAME}
 	bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat ${TARGET}/${DISK_NAME}
-	dd if=${TARGET}/boot.o of=${TARGET}/${DISK_NAME} bs=512 count=1 seek=0 conv=notrunc
-	dd if=${TARGET}/setup.o of=${TARGET}/${DISK_NAME} bs=512 count=2 seek=1 conv=notrunc
+	dd if=${TARGET}/bootloader/boot.o of=${TARGET}/${DISK_NAME} bs=512 count=1 seek=0 conv=notrunc
+	dd if=${TARGET}/bootloader/setup.o of=${TARGET}/${DISK_NAME} bs=512 count=2 seek=1 conv=notrunc
 	dd if=${TARGET}/system.bin of=${TARGET}/${DISK_NAME} bs=512 count=60 seek=3 conv=notrunc
 
-${TARGET}/%.o: src/bootloader/%.asm
-	mkdir -p ${TARGET}
+# 编译 bootloader/%.asm 中的引导程序
+${TARGET}/bootloader/%.o: src/bootloader/%.asm
+	mkdir -p ${TARGET}/bootloader/
 	nasm $< -o $@
 
+# 将 elf 格式的文件转换成纯机器码的文件
 ${TARGET}/system.bin: ${TARGET}/kernel.elf
 	objcopy -O binary $< $@
 
-${TARGET}/kernel.elf: ${TARGET}/head.o ${TARGET}/main.o
+# 链接 bootloader/head.o 和 kernel/main.o 到 kernel.elf
+${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o ${TARGET}/kernel/main.o ${TARGET}/kernel/util/io.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
-${TARGET}/head.o: src/bootloader/head.asm
-	mkdir -p ${TARGET}
+# 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接
+${TARGET}/bootloader/head.o: src/bootloader/head.asm
+	mkdir -p ${TARGET}/bootloader/
 	nasm -f elf32 $< -o $@
 
-${TARGET}/main.o: src/kernel/main.c
-	mkdir -p ${TARGET}
+# 编译 kernel/util 文件夹里边的工具类
+${TARGET}/kernel/util/%.o: src/kernel/util/%.asm
+	mkdir -p ${TARGET}/kernel/util/
+	nasm -f elf32 $< -o $@
+
+# 编译 C 语言内核文件的主入口文件
+${TARGET}/kernel/main.o: src/kernel/main.c
+	mkdir -p ${TARGET}/kernel/
 	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
 
 clean:
