@@ -34,7 +34,13 @@ ${TARGET}/system.bin: ${TARGET}/kernel.elf
 	objcopy -O binary $< $@
 
 # 链接 bootloader/head.o 和 kernel/main.o 到 kernel.elf
-${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o ${TARGET}/kernel/main.o ${TARGET}/kernel/util/io.o
+${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o \
+	${TARGET}/kernel/main.o \
+	${TARGET}/kernel/util/io.o \
+	${TARGET}/kernel/console/console.o \
+	${TARGET}/kernel/string/string.o \
+	${TARGET}/kernel/system/printk.o \
+	${TARGET}/kernel/system/vsprintf.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
 # 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接
@@ -50,6 +56,19 @@ ${TARGET}/kernel/util/%.o: src/kernel/util/%.asm
 # 编译 C 语言内核文件的主入口文件
 ${TARGET}/kernel/main.o: src/kernel/main.c
 	mkdir -p ${TARGET}/kernel/
+	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
+
+
+${TARGET}/kernel/console/%.o: src/kernel/console/%.c
+	mkdir -p ${TARGET}/kernel/console/
+	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
+
+${TARGET}/kernel/string/%.o: src/kernel/string/%.c
+	mkdir -p ${TARGET}/kernel/string/
+	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
+
+${TARGET}/kernel/system/%.o: src/kernel/system/%.c
+	mkdir -p ${TARGET}/kernel/system/
 	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
 
 clean:
