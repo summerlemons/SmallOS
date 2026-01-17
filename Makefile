@@ -40,7 +40,8 @@ ${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o \
 	${TARGET}/kernel/console/console.o \
 	${TARGET}/kernel/string/string.o \
 	${TARGET}/kernel/system/printk.o \
-	${TARGET}/kernel/system/vsprintf.o
+	${TARGET}/kernel/system/vsprintf.o \
+	${TARGET}/kernel/system/gdt.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
 # 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接

@@ -202,6 +202,12 @@ msg:
 prepare_to_protected_mode_msg:
     db "Prepare to enter protected mode...", 10, 13, 0
 
+B8000_SEG_BASE equ 0xb8000
+B8000_SEG_LIMIT equ 0x7fff
+
+CODE_SELECTOR equ (1 << 3)
+DATA_SELECTOR equ (2 << 3)
+B8000_SELECTOR equ (3 << 3)
 ; 构建 GDT 表
 gdt_table_start:
     dd 0, 0 ; db 表示定义字节，dw 表示定义字(1 字 = 2 字节)，dd 表示定义双字(2 字 = 4 字节), dq 4 字 = 8 字节
@@ -219,6 +225,15 @@ data_descriptor:
     db 0b1_00_1_0010 ; 段属性
     db 0b1_1_0_0_1111 ; G_D/B_0_AVL 段界限 19:16
     db 0              ; 段基址 31:24
+
+b8000_descriptor:
+    dw B8000_SEG_LIMIT && 0xFFFF
+    dw B8000_SEG_BASE && 0xFFFF
+    dw B8000_SEG_BASE >> 16 & 0xff
+    ;   P_DPL_S_TYPE
+    db 0b1_00_1_0010
+    db 0b0_1_00_0000 | (B8000_SEG_LIMIT >> 16 & 0xf)
+    db B8000_SEG_BASE >> 24 & 0xff
 gdt_table_end:
 
 gdt_descriptor:
