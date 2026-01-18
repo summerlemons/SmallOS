@@ -65,7 +65,7 @@ static void r3_gdt_data_item(int gdt_index, int base, int limit) {
 void gdt_init() { 
     printk("gdt_init...\n");
     __asm__ volatile ("sgdt gdt_ptr"); // 获取 gdtr 寄存器的值，写入到 gdt_ptr 中
-    memcpy(&gdt, gdt_ptr.base, gdt_ptr.limit); // 将 gdt 表中的内容复制到 gdt 中
+    memcpy(&gdt, gdt_ptr.base, gdt_ptr.limit + 1); // 将 gdt 表中的内容复制到 gdt 中
 
     // 创建r3用的段描述符：代码段、数据段
     r3_gdt_code_item(4, 0, 0xfffff);
