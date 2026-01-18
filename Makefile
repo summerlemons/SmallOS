@@ -41,7 +41,9 @@ ${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o \
 	${TARGET}/kernel/string/string.o \
 	${TARGET}/kernel/system/printk.o \
 	${TARGET}/kernel/system/vsprintf.o \
-	${TARGET}/kernel/system/gdt.o
+	${TARGET}/kernel/system/gdt.o \
+	${TARGET}/kernel/system/idt.o \
+	${TARGET}/kernel/system/interrupt_handler.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
 # 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接
@@ -71,6 +73,10 @@ ${TARGET}/kernel/string/%.o: src/kernel/string/%.c
 ${TARGET}/kernel/system/%.o: src/kernel/system/%.c
 	mkdir -p ${TARGET}/kernel/system/
 	gcc ${CFLAGS} ${DEBUG} -c $< -o $@
+
+${TARGET}/kernel/system/%.o: src/kernel/system/%.asm
+	mkdir -p ${TARGET}/kernel/system/
+	nasm -f elf32 $< -o $@
 
 clean:
 	rm -rf ${TARGET}
