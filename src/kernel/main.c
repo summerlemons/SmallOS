@@ -12,6 +12,4 @@ void kernel_main(void) {
 
     char* s = "Small";
     printk("Welcome to %sOS!\n", s);
-
-    int c = 1 / 0;
 }

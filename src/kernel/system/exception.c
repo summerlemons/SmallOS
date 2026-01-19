@@ -80,5 +80,25 @@ void exception_handler(registers_t registers) {
     printk("Error Code : 0x%08X\n", registers.error_code);
     printk("==========\n");
 
-    while (1);
+    // 下边是极其严重的错误，需要宕机
+    if (
+        registers.idt_index == 0x08 || 
+        registers.idt_index == 0x0a ||
+        registers.idt_index == 0x0b ||
+        registers.idt_index == 0x0c ||
+        registers.idt_index == 0x0d ||
+        registers.idt_index == 0x0e ||
+        registers.idt_index == 0x11 ||
+        registers.idt_index == 0x15 ||
+        registers.idt_index == 0x1d ||
+        registers.idt_index == 0x1e
+    ) {
+        printk("System Halted!\n");
+        for(;;);  // 无限循环
+    }
+
+    // 对于 8259a 中断处理芯片，发送 EOI
+    if (registers.idt_index >= 0x20 && registers.idt_index <= 0x2f) {
+        send_eoi(registers.idt_index);
+    }
 }

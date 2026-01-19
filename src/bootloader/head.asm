@@ -40,7 +40,7 @@ _start:
 
 ; 屏蔽主芯片所有中断，只接收键盘中断
 .enable_8259a_main:
-    mov al, 0b11111101
+    mov al, 0b11111100
     out 0x21, al
 
 ; 屏蔽从芯片所有中断
