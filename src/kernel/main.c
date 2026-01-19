@@ -7,10 +7,11 @@ void kernel_main(void) {
     console_init(); // 初始化控制台
     gdt_init();     // 初始化 GDT 表
     idt_init();     // 初始化 IDT 表
+    // 打开中断开关
+    asm volatile("sti");
 
     char* s = "Small";
     printk("Welcome to %sOS!\n", s);
 
-    // 打开中断开关
-    asm volatile("sti");
+    int c = 1 / 0;
 }

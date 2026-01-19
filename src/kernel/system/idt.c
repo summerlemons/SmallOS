@@ -7,8 +7,11 @@
 interrupt_gate_t interrupt_table[INTERRUPT_TABLE_SIZE] = {0};
 // idtr 寄存器值
 idt_ptr_t idt_ptr = {0};
-// 从外部引入的中断处理函数，目前我们把所有的中断处理函数都用这一个函数处理
+
+// 在汇编中定义的最普通中断处理函数
 extern void interrupt_handler();
+// 在汇编中定义的 0x00 ~ 0x2f 的通用中断处理函数
+extern int interrupt_handler_table[0x2f];
 // 键盘中断处理函数
 extern void keymap_handler_entry();
 
@@ -17,9 +20,13 @@ void idt_init() {
     for (int i = 0; i < INTERRUPT_TABLE_SIZE; ++i) {
         interrupt_gate_t* p = &interrupt_table[i];
 
-        int handler = interrupt_handler;
+        int handler;
         if (i == 0x21) { // 键盘中断
-            handler = keymap_handler_entry;
+            handler = (int)keymap_handler_entry;
+        } else if (i <= 0x2f) { // 0x00 ~ 0x1f 的通用中断处理函数
+            handler = (int)interrupt_handler_table[i];
+        } else { // 其他中断默认处理函数
+            handler = (int)interrupt_handler;
         }
 
         p->offset0 = handler & 0xffff;

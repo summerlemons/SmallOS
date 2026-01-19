@@ -44,7 +44,8 @@ ${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o \
 	${TARGET}/kernel/system/gdt.o \
 	${TARGET}/kernel/system/idt.o \
 	${TARGET}/kernel/system/interrupt_handler.o \
-	${TARGET}/kernel/system/keyboard.o
+	${TARGET}/kernel/system/keyboard.o \
+	${TARGET}/kernel/system/exception.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
 # 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接
