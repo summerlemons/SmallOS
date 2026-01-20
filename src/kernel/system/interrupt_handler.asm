@@ -6,6 +6,8 @@ extern printk
 extern keymap_handler
 ; 引入 exception.c 文件中的异常处理函数: exception_handler
 extern exception_handler
+; 引入 clock.c 文件中的时钟处理函数: clock_handler
+extern clock_handler
 
 global interrupt_handler
 interrupt_handler:
@@ -26,6 +28,16 @@ keymap_handler_entry:
     add esp, 4
 
     iret
+
+; 时钟中断
+global clock_handler_entry
+clock_handler_entry:
+    push 0x20
+    call clock_handler
+    add esp, 4
+
+    iret
+
 
 ; 无错误码的中断处理宏定义
 %macro INTERRUPT_HANDLER 1

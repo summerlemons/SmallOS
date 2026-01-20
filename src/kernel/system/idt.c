@@ -14,6 +14,8 @@ extern void interrupt_handler();
 extern int interrupt_handler_table[0x2f];
 // 键盘中断处理函数
 extern void keymap_handler_entry();
+// 时钟中断处理函数
+extern void clock_handler_entry();
 
 void idt_init() {
     printk("idt_init...\n");
@@ -21,7 +23,9 @@ void idt_init() {
         interrupt_gate_t* p = &interrupt_table[i];
 
         int handler;
-        if (i == 0x21) { // 键盘中断
+        if (i == 0x20) { // 时钟中断
+            handler = (int)clock_handler_entry;
+        } else if (i == 0x21) { // 键盘中断
             handler = (int)keymap_handler_entry;
         } else if (i <= 0x2f) { // 0x00 ~ 0x1f 的通用中断处理函数
             handler = (int)interrupt_handler_table[i];
