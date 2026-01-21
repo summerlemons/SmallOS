@@ -46,7 +46,8 @@ ${TARGET}/kernel.elf: ${TARGET}/bootloader/head.o \
 	${TARGET}/kernel/system/interrupt_handler.o \
 	${TARGET}/kernel/system/keyboard.o \
 	${TARGET}/kernel/system/exception.o \
-	${TARGET}/kernel/system/pit.o
+	${TARGET}/kernel/system/pit.o \
+	${TARGET}/kernel/system/memory.o
 	ld -m elf_i386 $^ -o $@ -Ttext 0x1200
 
 # 编译 bootloader/head.asm 用来将汇编与 C 语言进行链接
@@ -88,7 +89,7 @@ bochs: all
 	bochs -q -f bochsrc
 
 qemu: all
-	qemu-system-x86_64 -hda ${TARGET}/${DISK_NAME}
+	qemu-system-x86_64 -m 32M -hda ${TARGET}/${DISK_NAME}
 
 qemug: all
-	qemu-system-i386 -hda ${TARGET}/${DISK_NAME} -S -s
+	qemu-system-i386 -m 32M -hda ${TARGET}/${DISK_NAME} -S -s

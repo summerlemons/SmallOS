@@ -1,5 +1,8 @@
 [ORG 0x500]
 
+ADDR_DETECT_TIMES equ 0x1000
+ADDR_INFO equ 0x1002
+
 [BITS 16]
 [SECTION .text]
 global _start
@@ -16,6 +19,43 @@ _start:
     mov si, msg
     call print
 
+; 检测内存信息
+.detect_memory:
+    mov di, ADDR_INFO                 ; 表示检测到的内容放到什么位置
+    xor ebx, ebx                      ; 第一次调用必须将 ebx 置 0
+    mov edx, 0x534D4150               ; 签名 'SMAP'，必须是这个固定值
+    mov word [ADDR_DETECT_TIMES], 0   ; 用于记录检测了多少次
+
+.next_entry:
+    mov eax, 0xE820                   ; BIOS 功能号
+    mov ecx, 20                       ; ARDS 结构体大小（字节）
+    
+    int 0x15                          ; 调用 BIOS 中断
+    
+    jc .error                         ; 如果进位标志 CF=1，说明发生错误
+    
+    add di, 20                        ; 缓冲区指针后移，准备存放下一个结构体
+    inc word [ADDR_DETECT_TIMES]      ; 条目数 +1
+    
+    cmp ebx, 0                       ; 如果 ebx 变为 0，说明已经读完所有条目
+    jnz .next_entry                   ; 否则继续获取
+    jmp .done
+
+
+.error:
+    ; 打印错误信息
+    mov si, memory_check_error_msg
+    call print
+
+    jmp $
+
+; 检测内存信息成功
+.done:
+    mov si, memory_check_success_msg
+    call print
+
+; 进入保护模式
+.enter_protected_mode:
     ; 打印准备进入保护模式的信息
     mov si, prepare_to_protected_mode_msg
     call print
@@ -201,6 +241,12 @@ msg:
 
 prepare_to_protected_mode_msg:
     db "Prepare to enter protected mode...", 10, 13, 0
+
+memory_check_error_msg:
+    db "memory check fail...", 10, 13, 0
+
+memory_check_success_msg:
+    db "memory check success...", 10, 13, 0
 
 B8000_SEG_BASE equ 0xb8000
 B8000_SEG_LIMIT equ 0x7fff
