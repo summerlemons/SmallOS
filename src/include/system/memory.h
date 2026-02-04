@@ -60,4 +60,12 @@ void memory_manager_init();
  */
 void print_memory_manager_info();
 
+/**
+ * 获取一页内存
+ */
+void* get_page();
+/**
+ * 释放一页内存
+ */
+void free_page(void* p);
 #endif

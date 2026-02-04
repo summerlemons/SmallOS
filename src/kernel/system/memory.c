@@ -123,6 +123,7 @@ void memory_manager_init() {
  * 打印内存管理信息
  */
 void print_memory_manager_info() {
+    printk("page_frame_manager.used_pages22222: %d\n", page_frame_manager.used_pages);
     printk(
         "max_memory: 0x%x, available_mem: 0x%x(%f G),\nused_pages: %d, free_pages: %d,\ntotal_pages: %d, bitmap_size: %d,\nbitmap_pages: %d\n",
         page_frame_manager.max_memory, page_frame_manager.available_mem, page_frame_manager.available_mem / 1024.0 / 1024.0 / 1024.0,
@@ -151,7 +152,6 @@ static void bitmap_init() {
         }
         // 统计可用内存
         if (ards->type == 1 && ards->base_addr_low >= VALID_MEMORY_FROM) { // 忽略小于 1M 的内存
-            printk("%u\n", ards->length_low);
             page_frame_manager.available_mem += ards->length_low; // 32 位操作系统下，只使用低 32 位即可
         }
     }
@@ -186,4 +186,72 @@ static void bitmap_init() {
     // 初始化位图
     memset(page_frame_manager.bitmap, 0xFF, page_frame_manager.bitmap_size); // 全部置为 1, 表示全部不可用
     page_frame_manager.used_pages = page_frame_manager.total_pages; // 这里先将所有页设置为已使用
+    printk("page_frame_manager.used_pages: %d\n", page_frame_manager.used_pages);
+    print_memory_manager_info();
+}
+
+/**
+ * 获取一页内存
+ */
+void* get_page() {
+    for (u32 byte_idx = 0; byte_idx < page_frame_manager.bitmap_size; byte_idx++) {
+        if (page_frame_manager.bitmap[byte_idx] != 0xFF) {
+            for (u32 bit_idx = 0; bit_idx < BITS_PER_BYTE; bit_idx++) {
+                // 测试第 bit_idx 位是否为 0
+                if (!(page_frame_manager.bitmap[byte_idx] & (1 << bit_idx))) {
+                    u32 idx = byte_idx * BITS_PER_BYTE + bit_idx;
+                    
+                    // 越界检查（防止位图末尾多余的 bit 被当作有效页）
+                    if (idx >= page_frame_manager.total_pages) {
+                        return 0;
+                    }
+
+                    // 标记为已使用 (PAGE_USED)
+                    set_bit_map_by_idx(idx, PAGE_USED);
+                    
+                    // 更新统计信息
+                    page_frame_manager.used_pages++;
+                    page_frame_manager.free_pages--;
+
+                    // 计算该页对应的物理地址
+                    u32 addr = idx * PAGE_SIZE;
+                    return (void*)addr;
+                }
+            }
+        }
+    }
+    printk("Error: Out of memory in get_page()!\n");
+    return 0;
+}
+/**
+ * 释放一页内存
+ */
+void free_page(void* p) {
+    u32 addr = (u32)p;
+    // 基础检查：地址必须是页对齐的且在管理范围内
+    if (addr % PAGE_SIZE != 0) {
+        printk("Error: free_page address 0x%x is not page aligned!\n", addr);
+        return;
+    }
+    if (addr >= page_frame_manager.max_memory) {
+        printk("Error: free_page address 0x%x is out of range!\n", addr);
+        return;
+    }
+
+    u32 idx = get_bit_map_idx_by_addr(addr);
+
+    // 检查该页是否本就是空闲的（防止重复释放）
+    u32 byte_idx = idx / BITS_PER_BYTE;
+    u32 bit_idx = idx % BITS_PER_BYTE;
+    if (!(page_frame_manager.bitmap[byte_idx] & (1 << bit_idx))) {
+        printk("Warning: page at 0x%x is already free!\n", addr);
+        return;
+    }
+
+    // 标记为空闲 (PAGE_FREE)
+    set_bit_map_by_idx(idx, PAGE_FREE);
+
+    // 更新统计信息
+    page_frame_manager.used_pages--;
+    page_frame_manager.free_pages++;
 }

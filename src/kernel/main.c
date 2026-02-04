@@ -13,6 +13,11 @@ void kernel_main(void) {
     print_memory_info();         // 打印内存信息
     print_memory_manager_info(); // 打印内存管理信息
 
+    void* page = get_page();
+    print_memory_manager_info();
+    free_page(page);
+    print_memory_manager_info();
+
     // 打开中断开关
     asm volatile("sti");
 
