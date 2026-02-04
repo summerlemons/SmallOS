@@ -89,7 +89,7 @@ bochs: all
 	bochs -q -f bochsrc
 
 qemu: all
-	qemu-system-x86_64 -m 32M -hda ${TARGET}/${DISK_NAME}
+	qemu-system-x86_64 -m 4G -hda ${TARGET}/${DISK_NAME}
 
 qemug: all
-	qemu-system-i386 -m 32M -hda ${TARGET}/${DISK_NAME} -S -s
+	qemu-system-i386 -m 4G -hda ${TARGET}/${DISK_NAME} -S -s
