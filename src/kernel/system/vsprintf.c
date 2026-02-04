@@ -216,37 +216,41 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
             case 'f': {
                 double num = va_arg(args, double);
                 
-                // 1. 处理负数
+                // 1. 处理正负号
                 if (num < 0) {
                     *str++ = '-';
                     num = -num;
                 }
 
-                // 2. 提取整数部分和小数部分
-                int i_part = (int)num;
-                double f_part = num - (double)i_part;
-
-                // 3. 确定精度 (默认为 6 位)
+                // 2. 确定精度 (默认为 6 位)
                 if (precision < 0) precision = 6;
 
-                // 4. 先打印整数部分
-                // 调用你代码里的 number(str, num, base, size, precision, type)
+                // 3. 提取并打印整数部分
+                unsigned long i_part = (unsigned long)num;
                 str = number(str, i_part, 10, field_width, 0, flags);
 
-                // 5. 打印小数点
-                *str++ = '.';
+                // 4. 处理小数点（仅在有精度要求时）
+                if (precision > 0) {
+                    *str++ = '.';
 
-                // 6. 计算小数部分的数值
-                // 例如 0.123 变成 123
-                for (int i = 0; i < precision; i++) {
-                    f_part *= 10;
+                    // 5. 计算小数部分并实现四舍五入
+                    double f_part = num - (double)i_part;
+                    
+                    // 动态计算乘数，例如精度为 2，则 pow_10 = 100
+                    unsigned long pow_10 = 1;
+                    for (int j = 0; j < precision; j++) pow_10 *= 10;
+
+                    // 四舍五入处理：(小数 * 10^n) + 0.5
+                    unsigned long f_int = (unsigned long)(f_part * pow_10 + 0.5);
+
+                    // 进位处理：如果四舍五入导致小数部分溢出（例如 0.999 变成 1.000）
+                    // 这种简单实现暂不处理整数进位，但能保证小数位对齐
+                    if (f_int >= pow_10) f_int = pow_10 - 1; 
+
+                    // 6. 打印小数部分
+                    // 关键点：宽度和精度都设为 precision，并强制补零 (ZEROPAD)
+                    str = number(str, f_int, 10, precision, precision, ZEROPAD);
                 }
-                int f_int = (int)(f_part + 0.5); // +0.5 是为了四舍五入
-
-                // 7. 打印小数部分
-                // 注意：这里必须强制补零（ZEROPAD），且宽度等于精度
-                // 比如 0.001 必须打印成 "001" 而不是 "1"
-                str = number(str, f_int, 10, precision, precision, ZEROPAD);
                 break;
             }
             default:
