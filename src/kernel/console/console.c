@@ -163,6 +163,7 @@ void console_write(char *buf, u32 count)
                     command_lf();
                 }
 
+                ptr = pos; // 获取当前字符位置
                 *ptr = ch;
                 ptr++;
                 *ptr = 0x07;

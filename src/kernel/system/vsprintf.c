@@ -180,7 +180,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 
             case 'o':
                 str = number(str, va_arg(args, unsigned long), 8,
-                             field_width, precision, flags);
+                            field_width, precision, flags);
                 break;
 
             case 'p':
@@ -190,14 +190,14 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                 }
                 str = number(str,
                              (unsigned long) va_arg(args, void *), 16,
-                             field_width, precision, flags);
+                            field_width, precision, flags);
                 break;
 
             case 'x':
                 flags |= SMALL;
             case 'X':
                 str = number(str, va_arg(args, unsigned long), 16,
-                             field_width, precision, flags);
+                            field_width, precision, flags);
                 break;
 
             case 'd':
@@ -205,7 +205,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                 flags |= SIGN;
             case 'u':
                 str = number(str, va_arg(args, unsigned long), 10,
-                             field_width, precision, flags);
+                            field_width, precision, flags);
                 break;
 
             case 'n':
@@ -213,6 +213,42 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                 *ip = (str - buf);
                 break;
 
+            case 'f': {
+                double num = va_arg(args, double);
+                
+                // 1. 处理负数
+                if (num < 0) {
+                    *str++ = '-';
+                    num = -num;
+                }
+
+                // 2. 提取整数部分和小数部分
+                int i_part = (int)num;
+                double f_part = num - (double)i_part;
+
+                // 3. 确定精度 (默认为 6 位)
+                if (precision < 0) precision = 6;
+
+                // 4. 先打印整数部分
+                // 调用你代码里的 number(str, num, base, size, precision, type)
+                str = number(str, i_part, 10, field_width, 0, flags);
+
+                // 5. 打印小数点
+                *str++ = '.';
+
+                // 6. 计算小数部分的数值
+                // 例如 0.123 变成 123
+                for (int i = 0; i < precision; i++) {
+                    f_part *= 10;
+                }
+                int f_int = (int)(f_part + 0.5); // +0.5 是为了四舍五入
+
+                // 7. 打印小数部分
+                // 注意：这里必须强制补零（ZEROPAD），且宽度等于精度
+                // 比如 0.001 必须打印成 "001" 而不是 "1"
+                str = number(str, f_int, 10, precision, precision, ZEROPAD);
+                break;
+            }
             default:
                 if (*fmt != '%')
                     *str++ = '%';
